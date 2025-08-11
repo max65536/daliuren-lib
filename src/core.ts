@@ -1,4 +1,4 @@
-import { DiZhi, DlError, PanResult, SiKeSanZhuan, TianGan } from "./types.js";
+import { DiZhi, DlError, TianGan } from "./types.js";
 
 export const DIZHI_ORDER: DiZhi[] = [
   "子", "丑", "寅", "卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥",
@@ -13,7 +13,7 @@ const ZHI_SET = new Set<string>([
 
 /** 天干寄宫映射 */
 export const GAN_JI_GONG: Record<TianGan, DiZhi> = {
-  // 甲寄寅，乙寄辰，丙寄午，丁寄未，戊寄辰，己寄未，庚寄申，辛寄戌，壬寄亥，癸寄丑
+  // 甲寄寅，乙寄辰，丙寄巳，丁寄未，戊寄巳，己寄未，庚寄申，辛寄戌，壬寄亥，癸寄丑
   "甲": "寅",
   "乙": "辰",
   "丙": "巳",
@@ -56,19 +56,4 @@ export function calcGanShang(gan: TianGan, ju: number): DiZhi {
   return DIZHI_ORDER[idx];
 }
 
-/** 四课三传占位实现：待提供具体流派规则后补充 */
-export function buildSiKeSanZhuan(): SiKeSanZhuan {
-  return {
-    kind: "昂星课",
-    sanZhuan: ["TODO", "TODO", "TODO"],
-    note:
-      "占位：请使用 deriveSiKeSanZhuan(新API) 基于四课和天盘计算三传。",
-  };
-}
-
-export function computePan(dayGanzhi: string, ju: number): PanResult {
-  const { gan, zhi } = parseDayGanzhi(dayGanzhi);
-  const ganShang = calcGanShang(gan, ju);
-  const siKeSanZhuan = buildSiKeSanZhuan();
-  return { gan, zhi, ju, ganShang, siKeSanZhuan };
-}
+// 其余完整排盘请使用 computeFullPan（见 full.ts）

@@ -6,9 +6,6 @@
 - 天干寄宫映射
 - 从寄宫起第一局，按地支逆序推移求第 n 局的「干上」
 
-四课三传：
-- 暂为占位，需你确认所用起课/传课规则后补全（见下文“需要你提供”）。
-
 ### 安装与构建
 
 该仓库为本地库，直接 `tsc` 构建：
@@ -22,23 +19,20 @@ npm run build
 ### 使用示例
 
 ```ts
-import { computePan, calcGanShang } from "daliuren-lib";
+import { computeFullPan, calcGanShang } from "daliuren-lib";
 
-// 例：甲子日第1/2/3局的「干上」应为 寅/丑/子
+// 例：甲日第1/2/3局的「干上」
 console.log(calcGanShang("甲", 1)); // 寅
 console.log(calcGanShang("甲", 2)); // 丑
 console.log(calcGanShang("甲", 3)); // 子
 
-// 完整接口：输入日干支与第几局
-const r = computePan("甲子", 3);
-// r => { gan: '甲', zhi: '子', ju: 3, ganShang: '子', siKeSanZhuan: {...} }
+// 端到端：月将+时支构盘→四课→三传
+const pan = computeFullPan({ dayGanzhi: "丙申", shiZhi: "申", yueJiang: "未" });
+console.log(pan.siKePairs);
+console.log(pan.siKeSanZhuan);
 ```
 
 ### API
-
-- `computePan(dayGanzhi: string, ju: number): PanResult`
-  - 输入：日干支（如 `"甲子"`）与第几局（1–12）
-  - 返回：日干、日支、局号、以及计算出的「干上」；`siKeSanZhuan` 目前为占位。
 
 - `calcGanShang(gan: TianGan, ju: number): DiZhi`
   - 逻辑：

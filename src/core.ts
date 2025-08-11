@@ -59,19 +59,10 @@ export function calcGanShang(gan: TianGan, ju: number): DiZhi {
 /** 四课三传占位实现：待提供具体流派规则后补充 */
 export function buildSiKeSanZhuan(): SiKeSanZhuan {
   return {
-    siKe: [
-      { ke: 1, value: "TODO" },
-      { ke: 2, value: "TODO" },
-      { ke: 3, value: "TODO" },
-      { ke: 4, value: "TODO" },
-    ],
-    sanZhuan: [
-      { chuan: 1, value: "TODO" },
-      { chuan: 2, value: "TODO" },
-      { chuan: 3, value: "TODO" },
-    ],
+    kind: "昂星课",
+    sanZhuan: ["TODO", "TODO", "TODO"],
     note:
-      "当前仅实现天干寄宫与局序推移获取‘干上’，四课三传需按你指定的起课法补全。",
+      "占位：请使用 deriveSiKeSanZhuan(新API) 基于四课和天盘计算三传。",
   };
 }
 
@@ -81,4 +72,3 @@ export function computePan(dayGanzhi: string, ju: number): PanResult {
   const siKeSanZhuan = buildSiKeSanZhuan();
   return { gan, zhi, ju, ganShang, siKeSanZhuan };
 }
-

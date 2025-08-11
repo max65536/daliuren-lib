@@ -14,12 +14,23 @@ export interface InputParams {
 }
 
 export interface SiKeSanZhuan {
-  /** 四课，占位结构，待按你指定流派补充 */
-  siKe: Array<{ ke: 1 | 2 | 3 | 4; value: string }>;
-  /** 三传，占位结构，待按你指定流派补充 */
-  sanZhuan: Array<{ chuan: 1 | 2 | 3; value: string }>;
-  /** 说明当前仅实现了“干上”与局序推算 */
-  note: string;
+  /** 课型名称 */
+  kind:
+    | "重审课"
+    | "元首课"
+    | "比用课"
+    | "涉害课"
+    | "蒿矢课"
+    | "弹射课"
+    | "昂星课"
+    | "别责课"
+    | "反吟课"
+    | "伏吟课"
+    | "八专课";
+  /** 三传 */
+  sanZhuan: [string, string, string];
+  /** 简要说明 */
+  note?: string;
 }
 
 export interface PanResult {
@@ -36,4 +47,3 @@ export interface PanResult {
 }
 
 export class DlError extends Error {}
-

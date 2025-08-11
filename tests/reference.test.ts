@@ -90,7 +90,7 @@ const cases: Case[] = [
     name: "比用课3",
     dayGanzhi: "庚子",
     shiZhi: "巳",
-    yueJiang: "午",
+    yueJiang: "子",
     expectSanZhuan: ["戌", "巳", "子"],
   },
   {

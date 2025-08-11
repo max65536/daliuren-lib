@@ -184,18 +184,27 @@ function deriveRegular(input: DeriveInput): DeriveResult {
     const mo = nextByShang(plate, zhong);
     return { kind: "比用课", chu, zhong, mo, detail: "多处贼克，取与日干同阴阳者发用" };
   }
-  // 涉害（孟仲季法）：按“贼克所在课的下神”的 孟→仲→季 类别取其上神
+  // 涉害（孟仲季法）：按“候选上神所对应地盘(下神)”的 孟→仲→季 类别取其上神
   const groupOf = (z: DiZhi): 0 | 1 | 2 | 3 => {
     if (["寅", "申", "巳", "亥"].includes(z)) return 0; // 孟
     if (["子", "午", "卯", "酉"].includes(z)) return 1; // 仲
     if (["辰", "戌", "丑", "未"].includes(z)) return 2; // 季
     return 3;
   };
-  const idxSorted = indices
-    .filter((i) => (WUXING_OF_ZHI as any)[siKe[i].down])
-    .sort((i, j) => groupOf(siKe[i].down as DiZhi) - groupOf(siKe[j].down as DiZhi));
-  const pickIdx = idxSorted[0] ?? indices[0];
-  const chuFromPool = siKe[pickIdx].up;
+  // 查 plate 的天盘映射以求“某上神对应的地盘（下神）”
+  const tian = (plate as any).tianpan as Record<DiZhi, DiZhi> | undefined;
+  const palaceOfUp = (u: SymbolLike): DiZhi | undefined => {
+    if (!tian) return undefined;
+    const ent = Object.entries(tian).find(([, up]) => up === u);
+    return ent ? (ent[0] as DiZhi) : undefined;
+    };
+  const candWithGroup: Array<{ up: SymbolLike; grp: number }> = candidates.map((u, idx) => {
+    const palace = palaceOfUp(u);
+    const grp = palace ? groupOf(palace) : 99;
+    return { up: u, grp };
+  });
+  candWithGroup.sort((a, b) => a.grp - b.grp);
+  const chuFromPool = (candWithGroup[0]?.up) ?? candidates[0];
   const zhong = nextByShang(plate, chuFromPool);
   const mo = nextByShang(plate, zhong);
   return { kind: "涉害课", chu: chuFromPool, zhong, mo, detail: "多处贼克且比用无法区分，按孟→仲→季取发用" };

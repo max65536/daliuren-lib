@@ -88,6 +88,26 @@ const result = deriveSiKeSanZhuan({
 console.log(result);
 ```
 
+### 端到端：月将+时支构盘→四课→三传
+
+- `buildPlate({ yueJiang, shiZhi })`：以“月将加时”布天盘，月将在占时宫位之上，天/地盘地支均顺行。
+- `computeFullPan({ dayGanzhi, shiZhi, yueJiang })`：依你提供的规则生成四课并判课：
+  - 一课下=日干，上=其寄宫所在宫的上神
+  - 二课下=一课上；四课下=三课上
+  - 三课下=日支，上=其宫位上神
+  - 四课上神均取对应宫位的天盘上神
+  - 自动判定反吟/伏吟（yueJiang 与 shiZhi 冲/同位）、不全课（四上神出现重复）、八专（干支同位：日干寄宫=日支）
+
+示例：
+
+```ts
+import { computeFullPan } from "daliuren-lib";
+
+const pan = computeFullPan({ dayGanzhi: "甲寅", shiZhi: "辰", yueJiang: "丑" });
+console.log(pan.siKePairs);        // 四课上/下神对（按一~四课）
+console.log(pan.siKeSanZhuan);     // 课型与三传
+```
+
 ### 天干寄宫
 
 按你提供的规则：

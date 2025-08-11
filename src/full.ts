@@ -1,7 +1,7 @@
 import { DiZhi, PanResult, TianGan } from "./types.js";
 import { parseDayGanzhi, GAN_JI_GONG, DIZHI_ORDER } from "./core.js";
 import { PlateResolver, KePair, deriveSiKeSanZhuan } from "./engine.js";
-import { oppositeZhi } from "./rules.js";
+import { oppositeZhi, ke, wuXingOfSymbol } from "./rules.js";
 
 export interface Plate extends PlateResolver {
   /** 天盘：每个地支宫位上的上神（地支）*/
@@ -65,6 +65,13 @@ export function computeFullPan({ dayGanzhi, shiZhi, yueJiang }: BuildSiKeParams)
   const k4_down = k3_up;
   const k4_up = plate.shangShen(k4_down) as DiZhi;
 
+  const siKePairs: [KePair, KePair, KePair, KePair] = [
+    { up: k1_up, down: k1_down },
+    { up: k2_up, down: k2_down },
+    { up: k3_up, down: k3_down },
+    { up: k4_up, down: k4_down },
+  ];
+
   // 反吟/伏吟
   const isFanYin = oppositeZhi(shiZhi) === yueJiang;
   const isFuYin = shiZhi === yueJiang;
@@ -73,15 +80,16 @@ export function computeFullPan({ dayGanzhi, shiZhi, yueJiang }: BuildSiKeParams)
   const ups = [k1_up, k2_up, k3_up, k4_up];
   const isIncomplete = new Set(ups).size < 4;
 
-  // 八专：干支同位（以寄宫判断）
-  const isBaZhuan = (GAN_JI_GONG[gan] === zhi);
-
-  const siKePairs: [KePair, KePair, KePair, KePair] = [
-    { up: k1_up, down: k1_down },
-    { up: k2_up, down: k2_down },
-    { up: k3_up, down: k3_down },
-    { up: k4_up, down: k4_down },
-  ];
+  // 八专：干支同位 + 仅两课 + 上下无克
+  const isGanZhiSame = GAN_JI_GONG[gan] === zhi;
+  const pairKey = (p: KePair) => `${p.up}-${p.down}`;
+  const uniquePairs = new Set(siKePairs.map(pairKey));
+  const noKe = siKePairs.every((p) => {
+    const upX = wuXingOfSymbol(p.up);
+    const downX = wuXingOfSymbol(p.down);
+    return !ke(upX, downX) && !ke(downX, upX);
+  });
+  const isBaZhuan = isGanZhiSame && noKe;
 
   const derived = deriveSiKeSanZhuan({
     dayGan: gan,
@@ -107,4 +115,3 @@ export function computeFullPan({ dayGanzhi, shiZhi, yueJiang }: BuildSiKeParams)
     siKePairs,
   };
 }
-

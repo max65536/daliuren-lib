@@ -87,6 +87,21 @@ export function xingOf(z: DiZhi): DiZhi[] {
   return [];
 }
 
+export function nextXing(z: DiZhi): DiZhi | undefined {
+  // 三组相刑采用固定顺序循环：
+  // 寅→巳→申→寅；丑→戌→未→丑；子↔卯（两刑互换）；自刑组返回自身
+  if (z === "寅") return "巳";
+  if (z === "巳") return "申";
+  if (z === "申") return "寅";
+  if (z === "丑") return "戌";
+  if (z === "戌") return "未";
+  if (z === "未") return "丑";
+  if (z === "子") return "卯";
+  if (z === "卯") return "子";
+  if (z === "辰" || z === "午" || z === "酉" || z === "亥") return z;
+  return undefined;
+}
+
 export function yiMaOf(z: DiZhi): DiZhi {
   // 申子辰→寅；寅午戌→申；巳酉丑→亥；亥卯未→巳
   if (["申", "子", "辰"].includes(z)) return "寅";
@@ -133,4 +148,3 @@ export function compareYinYang(a: TianGan, b: DiZhi | TianGan): boolean {
   );
   return ya === yb;
 }
-

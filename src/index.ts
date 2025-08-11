@@ -3,3 +3,4 @@ export { DIZHI_ORDER, GAN_JI_GONG, calcGanShang, computePan, parseDayGanzhi } fr
 export * from "./rules.js";
 export * from "./engine.js";
 export * from "./plate.js";
+export * from "./full.js";

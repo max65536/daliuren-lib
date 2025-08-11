@@ -63,3 +63,6 @@ const r = computePan("甲子", 3);
 
 提供上述细则后，我会在此库内补全 `siKeSanZhuan` 的完整计算流程与类型定义。
 
+### 流程图
+
+基于 reference.md 的判课/取传流程图见 `flowchart.md`（Mermaid）。

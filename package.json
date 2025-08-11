@@ -11,7 +11,8 @@
     "clean": "rm -rf dist",
     "prepare": "npm run build",
     "test": "jest --runInBand",
-    "example": "node dist/examples/usage.js"
+    "example": "node dist/examples/usage.js",
+    "keti": "npm run build && node scripts/test_keti.mjs"
   },
   "devDependencies": {
     "@types/jest": "^30.0.0",

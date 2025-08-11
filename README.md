@@ -47,6 +47,47 @@ const r = computePan("甲子", 3);
 
 - `parseDayGanzhi(dayGanzhi)`：解析首两个汉字为干支并校验。
 
+### 新增：四课三传推导引擎
+
+- `deriveSiKeSanZhuan(input: DeriveInput): DeriveResult`
+  - 依据 flowchart.md（按 reference.md）实现了反吟/伏吟/别责/八专/贼克/比用/涉害/遥克/昂星 的判课与三传推导流程。
+  - 需要你提供“天盘取上神”的方法（`PlateResolver`），以及四课（`siKe`）本身。
+  - 这是为解耦“构盘”和“判课”而设计：当你在上层构出天地盘与四课后，可将其喂给该引擎得到三传。
+
+示例使用（伪盘，仅演示接口）：
+
+```ts
+import { deriveSiKeSanZhuan } from "daliuren-lib";
+
+const plate = {
+  shangShen(sym: string) {
+    // 示例：简单把地支顺序后移一位；天干先寄宫到地支再后移一位
+    const D = ["子","丑","寅","卯","辰","巳","午","未","申","酉","戌","亥"];
+    const GAN_JI_GONG: Record<string,string> = {甲:"寅",乙:"辰",丙:"午",丁:"未",戊:"辰",己:"未",庚:"申",辛:"戌",壬:"亥",癸:"丑"};
+    const asZhi = D.includes(sym) ? sym : GAN_JI_GONG[sym];
+    const i = D.indexOf(asZhi);
+    return D[(i+1)%12];
+  },
+};
+
+const result = deriveSiKeSanZhuan({
+  dayGan: "甲",
+  dayZhi: "子",
+  // 四课：上神/下神对，示例仅演示结构
+  siKe: [
+    { up: "丑", down: "子" },
+    { up: "卯", down: "甲" },
+    { up: "酉", down: "申" },
+    { up: "申", down: "丁" },
+  ],
+  plate,
+  // 根据构盘结果判定以下标志位（若有）：
+  isFanYin: false,
+  isFuYin: false,
+});
+console.log(result);
+```
+
 ### 天干寄宫
 
 按你提供的规则：

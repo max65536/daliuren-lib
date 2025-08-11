@@ -1,4 +1,4 @@
-import { DiZhi, PanResult, TianGan } from "./types.js";
+import { DiZhi, PanResult, TianGan, DlError } from "./types.js";
 import { parseDayGanzhi, GAN_JI_GONG, DIZHI_ORDER } from "./core.js";
 import { PlateResolver, KePair, deriveSiKeSanZhuan } from "./engine.js";
 import { oppositeZhi, ke, wuXingOfSymbol } from "./rules.js";
@@ -106,6 +106,81 @@ export function computeFullPan({ dayGanzhi, shiZhi, yueJiang }: BuildSiKeParams)
     gan,
     zhi,
     ju: 1, // 与旧接口兼容字段（此处不涉及“局”，暂置 1）
+    ganShang: plate.shangShen(gan) as DiZhi,
+    siKeSanZhuan: {
+      kind: derived.kind,
+      sanZhuan: [String(derived.chu), String(derived.zhong), String(derived.mo)] as [string, string, string],
+      note: derived.detail,
+    },
+    siKePairs,
+  };
+}
+
+export function computePanByJu(dayGanzhi: string, ju: number): FullPanResult {
+  const { gan, zhi } = parseDayGanzhi(dayGanzhi);
+  if (!Number.isInteger(ju) || ju < 1 || ju > 12) {
+    throw new DlError("第几局需为 1-12 的整数");
+  }
+  // 以“固定偏移”构造天盘：tianpan[palace] = palace 顺行 delta 位
+  const start = GAN_JI_GONG[gan];
+  const startIdx = DIZHI_ORDER.indexOf(start);
+  const curIdx = (startIdx - (ju - 1) + 12) % 12; // 该局的干上索引
+  const delta = (curIdx - startIdx + 12) % 12; // 顺行偏移
+  const tianpan: Record<DiZhi, DiZhi> = {} as any;
+  for (let i = 0; i < 12; i++) {
+    tianpan[DIZHI_ORDER[i]] = DIZHI_ORDER[(i + delta) % 12];
+  }
+  const plate: Plate = {
+    tianpan,
+    shangShen(sym) {
+      const palace: DiZhi = (DIZHI_ORDER as unknown as string[]).includes(sym as string)
+        ? (sym as DiZhi)
+        : GAN_JI_GONG[sym as TianGan];
+      return tianpan[palace];
+    },
+  };
+
+  // 四课
+  const k1_down = gan;
+  const k1_up = plate.shangShen(k1_down) as DiZhi;
+  const k2_down = k1_up;
+  const k2_up = plate.shangShen(k2_down) as DiZhi;
+  const k3_down = zhi;
+  const k3_up = plate.shangShen(k3_down) as DiZhi;
+  const k4_down = k3_up;
+  const k4_up = plate.shangShen(k4_down) as DiZhi;
+  const siKePairs: [KePair, KePair, KePair, KePair] = [
+    { up: k1_up, down: k1_down },
+    { up: k2_up, down: k2_down },
+    { up: k3_up, down: k3_down },
+    { up: k4_up, down: k4_down },
+  ];
+
+  // 标志位（未知时不判反/伏吟）；不全/八专按相同判定
+  const ups = [k1_up, k2_up, k3_up, k4_up];
+  const isIncomplete = new Set(ups).size < 4;
+  const pairKey = (p: KePair) => `${p.up}-${p.down}`;
+  const uniquePairs = new Set(siKePairs.map(pairKey));
+  const noKe = siKePairs.every((p) => {
+    const upX = wuXingOfSymbol(p.up);
+    const downX = wuXingOfSymbol(p.down);
+    return !ke(upX, downX) && !ke(downX, upX);
+  });
+  const isBaZhuan = (GAN_JI_GONG[gan] === zhi) && noKe;
+
+  const derived = deriveSiKeSanZhuan({
+    dayGan: gan,
+    dayZhi: zhi,
+    siKe: siKePairs,
+    plate,
+    isIncomplete,
+    isBaZhuan,
+  });
+
+  return {
+    gan,
+    zhi,
+    ju,
     ganShang: plate.shangShen(gan) as DiZhi,
     siKeSanZhuan: {
       kind: derived.kind,

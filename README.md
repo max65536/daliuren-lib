@@ -39,6 +39,10 @@ console.log(pan.siKeSanZhuan);
     - 第1局为“天干寄宫”；
     - 第n局从寄宫起，按地支序逆行 n-1 位（寅→丑→子→亥→...）。
 
+- `calcGanShang(gan: TianGan, { yueJiang, shiZhi })`
+  - 用途：根据“月将加时”的天/地盘相对位置，直接求出“当前干上”与“属于第几局”。
+  - 返回：`{ ju, ganShang }`
+
 - `parseDayGanzhi(dayGanzhi)`：解析首两个汉字为干支并校验。
 
 ### 新增：四课三传推导引擎
@@ -100,6 +104,21 @@ import { computeFullPan } from "daliuren-lib";
 const pan = computeFullPan({ dayGanzhi: "甲寅", shiZhi: "辰", yueJiang: "丑" });
 console.log(pan.siKePairs);        // 四课上/下神对（按一~四课）
 console.log(pan.siKeSanZhuan);     // 课型与三传
+```
+
+### 仅凭“日干支 + 局数”起四课三传
+
+- `computePanByJu(dayGanzhi: string, ju: number)`：
+  - 用“局”确定天/地盘的相对偏移（固定顺行偏移），从而构造四课并判课。
+  - 不依赖月将/时支（无法判反吟/伏吟，但不影响常规课型）。
+
+示例：
+
+```ts
+import { computePanByJu } from "daliuren-lib";
+const r = computePanByJu("丙申", 3);
+console.log(r.siKePairs);
+console.log(r.siKeSanZhuan);
 ```
 
 ### 天干寄宫

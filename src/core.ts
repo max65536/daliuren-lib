@@ -46,14 +46,35 @@ export function parseDayGanzhi(dayGanzhi: string): { gan: TianGan; zhi: DiZhi } 
  * - 第1局为：天干寄宫
  * - 第n局为：在地支序中自寄宫向逆序推移 n-1 位
  */
-export function calcGanShang(gan: TianGan, ju: number): DiZhi {
-  if (!Number.isInteger(ju) || ju < 1 || ju > 12) {
-    throw new DlError("第几局需为 1-12 的整数");
-  }
+export function calcGanShang(gan: TianGan, ju: number): DiZhi;
+export function calcGanShang(
+  gan: TianGan,
+  params: { yueJiang: DiZhi; shiZhi: DiZhi }
+): { ju: number; ganShang: DiZhi };
+export function calcGanShang(
+  gan: TianGan,
+  arg: number | { yueJiang: DiZhi; shiZhi: DiZhi }
+): DiZhi | { ju: number; ganShang: DiZhi } {
   const start = GAN_JI_GONG[gan];
   const startIdx = DIZHI_ORDER.indexOf(start);
-  const idx = (startIdx - (ju - 1) + 12) % 12;
-  return DIZHI_ORDER[idx];
+  if (typeof arg === "number") {
+    const ju = arg;
+    if (!Number.isInteger(ju) || ju < 1 || ju > 12) {
+      throw new DlError("第几局需为 1-12 的整数");
+    }
+    const idx = (startIdx - (ju - 1) + 12) % 12; // 从寄宫起逆行 n-1 位
+    return DIZHI_ORDER[idx];
+  }
+  // 根据“月将加时”的天/地盘相对关系计算：当前干上与所属“局”
+  const { yueJiang, shiZhi } = arg;
+  const idxShi = DIZHI_ORDER.indexOf(shiZhi);
+  const idxYJ = DIZHI_ORDER.indexOf(yueJiang);
+  // 天盘在 palace 的上神 = 从“时宫”为起点顺行 (palaceIndex - idxShi) 位后落在的月将顺行位置
+  const ganShang = DIZHI_ORDER[(idxYJ + (startIdx - idxShi + 12)) % 12];
+  // 反推出当前为第几局：解 startIdx - (ju-1) ≡ curIdx (mod 12)
+  const curIdx = DIZHI_ORDER.indexOf(ganShang);
+  const ju = ((startIdx - curIdx + 12) % 12) + 1;
+  return { ju, ganShang };
 }
 
 // 其余完整排盘请使用 computeFullPan（见 full.ts）

@@ -1,0 +1,34 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Caches and coverage
+.cache/
+.turbo/
+.nyc_output/
+coverage/
+
+# Logs
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.log
+
+# Env files
+.env
+.env.local
+.env.*.local
+
+# Editors
+.DS_Store
+.idea/
+.vscode/
+
+# Temp files
+tmp/
+*.tmp
+*.swp
+*.swo
+

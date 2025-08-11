@@ -9,7 +9,10 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "clean": "rm -rf dist",
-    "prepare": "npm run build"
+    "prepare": "npm run build",
+    "test": "node dist/examples/reference-examples.js"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.2"
   }
 }
-

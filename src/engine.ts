@@ -232,9 +232,10 @@ export function deriveSiKeSanZhuan(input: DeriveInput): DeriveResult {
         // 阳：取干合上神为初传
         // 合干的寄宫上神由 plate 决定，调用者需在 plate 层提供
         const partnerUp = plate.shangShen((({ 甲: "己", 乙: "庚", 丙: "辛", 丁: "壬", 戊: "癸", 己: "甲", 庚: "乙", 辛: "丙", 壬: "丁", 癸: "戊" } as any)[dayGan]) as TianGan);
-        const zhong = plate.shangShen(partnerUp);
-        const mo = plate.shangShen(zhong);
-        return { kind: "别责课", chu: partnerUp, zhong, mo, detail: "别责：阳日取干合上神为初传" };
+        const ganUp = plate.shangShen(dayGan);
+        const zhong = ganUp;
+        const mo = ganUp;
+        return { kind: "别责课", chu: partnerUp, zhong, mo, detail: "别责：阳日取干合上神为初传，中末取干上神" };
       } else {
         // 阴：取支前三合为初传（按顺时针下一位）
         const triPrev = ((z: DiZhi) => {
@@ -244,9 +245,10 @@ export function deriveSiKeSanZhuan(input: DeriveInput): DeriveResult {
           return g[(i + 1) % 3] as DiZhi;
         })(dayZhi);
         const chu = plate.shangShen(triPrev);
-        const zhong = plate.shangShen(chu);
-        const mo = plate.shangShen(zhong);
-        return { kind: "别责课", chu, zhong, mo, detail: "别责：阴日取支前三合为初传" };
+        const ganUp = plate.shangShen(dayGan);
+        const zhong = ganUp;
+        const mo = ganUp;
+        return { kind: "别责课", chu, zhong, mo, detail: "别责：阴日取支前三合为初传，中末取干上神" };
       }
     }
   }
@@ -255,21 +257,21 @@ export function deriveSiKeSanZhuan(input: DeriveInput): DeriveResult {
   if (input.isBaZhuan) {
     if (yinYangOfGan(dayGan) === "阳") {
       // 阳：干上神在天盘顺数三位为初传（plate 层实现）
-      const ganShang = plate.shangShen(dayGan);
-      const step1 = plate.shangShen(ganShang);
-      const step2 = plate.shangShen(step1);
-      const chu = step2;
+      const ORDER: DiZhi[] = ["子","丑","寅","卯","辰","巳","午","未","申","酉","戌","亥"];
+      const ganShang = plate.shangShen(dayGan) as DiZhi;
+      const idx = ORDER.indexOf(ganShang);
+      // 从干上开始“顺数三位”（含起点）=> 向前移动2位
+      const chu = ORDER[(idx + 2) % 12];
       const zhong = ganShang; // 中末传俱用干上神
       const mo = ganShang;
       return { kind: "八专课", chu, zhong, mo, detail: "八专：阳日干上顺数三位为初传" };
     } else {
       // 阴：以第四课上神逆数三神为初传；中末取干上
       const fourthUp = siKe[3].up;
-      // 逆数三神：此处用三次“逆上神”，需由 plate 提供逆映射；退而求其次用三次上神替代，调用方按需实现
-      const step1 = plate.shangShen(fourthUp);
-      const step2 = plate.shangShen(step1);
-      const step3 = plate.shangShen(step2);
-      const chu = step3;
+      const ORDER: DiZhi[] = ["子","丑","寅","卯","辰","巳","午","未","申","酉","戌","亥"];
+      const idx = ORDER.indexOf(fourthUp as DiZhi);
+      // 逆数三神（含起点）=> 向后移动2位
+      const chu = ORDER[(idx - 2 + 12) % 12];
       const ganShang = plate.shangShen(dayGan);
       const zhong = ganShang;
       const mo = ganShang;

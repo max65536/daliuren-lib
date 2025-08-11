@@ -119,8 +119,8 @@ function deriveRegular(input: DeriveInput): DeriveResult {
   const { siKe, dayGan, plate, dayZhi } = input;
   const { shangKeXia, xiaZeShang, tags } = countRelations(siKe);
 
-  // 优先级调整：若存在“下贼上”，按重审课处理（与 reference 示例一致）
-  if (xiaZeShang >= 1) {
+  // 若仅有一处“下贼上”，按重审课处理（示例：可同时存在一处上克下）
+  if (xiaZeShang === 1) {
     const idx = tags.findIndex((t) => t === "下贼上");
     const chu = siKe[idx].up; // 受克之神（上神）
     const zhong = nextByShang(plate, chu);
@@ -134,8 +134,20 @@ function deriveRegular(input: DeriveInput): DeriveResult {
     if (kind === "昂星课") {
       // 昂星课分阳/阴日两套
       const yang = yinYangOfGan(dayGan) === "阳";
-      const chuA = yang ? plate.shangShen("酉") : plate.shangShen("酉"); // 阳取地盘酉宫上神；阴取天盘酉下神（此处需由 plate 决定实现）
-      // 暂按 plate.shangShen("酉") 作为抽象：实际由 plate 层区分天/地盘
+      let chuA: SymbolLike;
+      if (yang) {
+        // 阳：取地盘酉宫上神（等价于宫位“酉”的上神）
+        chuA = plate.shangShen("酉");
+      } else {
+        // 阴：取天盘“酉”之下神 => 在天盘映射中，值为“酉”的宫位。
+        const tian = (plate as any).tianpan as Record<DiZhi, DiZhi> | undefined;
+        if (tian) {
+          const entry = Object.entries(tian).find(([, up]) => up === "酉");
+          chuA = (entry ? (entry[0] as DiZhi) : (plate.shangShen("酉") as DiZhi));
+        } else {
+          chuA = plate.shangShen("酉");
+        }
+      }
       const zhong = yang ? plate.shangShen(dayZhi) : plate.shangShen(dayGan);
       const mo = yang ? plate.shangShen(dayGan) : plate.shangShen(dayZhi);
       return { kind: "昂星课", chu: chuA, zhong, mo, detail: "无贼克且无遥克，按昂星课取传（阳/阴日分流）" };
@@ -145,7 +157,7 @@ function deriveRegular(input: DeriveInput): DeriveResult {
     return { kind, chu, zhong, mo, detail: kind === "蒿矢课" ? "四课无贼克，取上神遥克日干者发用" : "四课无贼克，取日干遥克之上神发用" };
   }
 
-  if (shangKeXia === 1) {
+  if (shangKeXia === 1 && xiaZeShang === 0) {
     // 无下贼上且仅一处上克下 => 元首课
     const idx = tags.findIndex((t) => t === "上克下");
     const chu = siKe[idx].up;
@@ -156,9 +168,13 @@ function deriveRegular(input: DeriveInput): DeriveResult {
 
   // ≥2处贼克 -> 比用/涉害
   // 比用：取与日干阴阳相同者为初传；若俱比或俱不比，转涉害
+  const indices: number[] = [];
   const candidates: SymbolLike[] = [];
   siKe.forEach((p, i) => {
-    if (tags[i] !== "无克") candidates.push(p.up);
+    if (tags[i] !== "无克") {
+      candidates.push(p.up);
+      indices.push(i);
+    }
   });
   const sameYY = candidates.filter((c) => compareYinYang(dayGan, c));
   const diffYY = candidates.filter((c) => !compareYinYang(dayGan, c));
@@ -168,10 +184,18 @@ function deriveRegular(input: DeriveInput): DeriveResult {
     const mo = nextByShang(plate, zhong);
     return { kind: "比用课", chu, zhong, mo, detail: "多处贼克，取与日干同阴阳者发用" };
   }
-  // 涉害（孟仲季法）——此处依赖外部传入或 plate 的分类；本实现用近似：优先取四孟，再四仲，再四季。
-  const seq: DiZhi[] = ["寅", "申", "巳", "亥", "子", "午", "卯", "酉", "辰", "戌", "丑", "未"]; // 孟→仲→季顺序
-  const pool = candidates.filter((c) => (WUXING_OF_ZHI as any)[c]);
-  const chuFromPool = pool.sort((a, b) => seq.indexOf(a as DiZhi) - seq.indexOf(b as DiZhi))[0] ?? candidates[0];
+  // 涉害（孟仲季法）：按“贼克所在课的下神”的 孟→仲→季 类别取其上神
+  const groupOf = (z: DiZhi): 0 | 1 | 2 | 3 => {
+    if (["寅", "申", "巳", "亥"].includes(z)) return 0; // 孟
+    if (["子", "午", "卯", "酉"].includes(z)) return 1; // 仲
+    if (["辰", "戌", "丑", "未"].includes(z)) return 2; // 季
+    return 3;
+  };
+  const idxSorted = indices
+    .filter((i) => (WUXING_OF_ZHI as any)[siKe[i].down])
+    .sort((i, j) => groupOf(siKe[i].down as DiZhi) - groupOf(siKe[j].down as DiZhi));
+  const pickIdx = idxSorted[0] ?? indices[0];
+  const chuFromPool = siKe[pickIdx].up;
   const zhong = nextByShang(plate, chuFromPool);
   const mo = nextByShang(plate, zhong);
   return { kind: "涉害课", chu: chuFromPool, zhong, mo, detail: "多处贼克且比用无法区分，按孟→仲→季取发用" };
@@ -217,8 +241,18 @@ export function deriveSiKeSanZhuan(input: DeriveInput): DeriveResult {
     // 无克：不取遥克。阳：干上→初刑→中刑；阴：支上→初刑→中刑
     const yang = yinYangOfGan(dayGan) === "阳";
     const first = yang ? plate.shangShen(dayGan) : plate.shangShen(dayZhi);
-    const zhong = nextXing(first as DiZhi) ?? plate.shangShen(first);
-    const mo = nextXing(zhong as DiZhi) ?? plate.shangShen(zhong);
+    let zhong: SymbolLike = nextXing(first as DiZhi) ?? plate.shangShen(first);
+    // 如初传自刑，取支上神为中传
+    if (zhong === first) {
+      zhong = plate.shangShen(dayZhi);
+    }
+    let mo: SymbolLike = nextXing(zhong as DiZhi) ?? plate.shangShen(zhong);
+    // 若中传又自刑，取中冲为末传
+    if (mo === (zhong as DiZhi)) {
+      const ORDER: DiZhi[] = ["子", "丑", "寅", "卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥"];
+      const idx = ORDER.indexOf(zhong as DiZhi);
+      mo = ORDER[(idx + 6) % 12];
+    }
     return { kind: "伏吟课", chu: first, zhong, mo, detail: "伏吟无克：不取遥克，阳干上/阴支上为初传" };
   }
 
@@ -237,14 +271,14 @@ export function deriveSiKeSanZhuan(input: DeriveInput): DeriveResult {
         const mo = ganUp;
         return { kind: "别责课", chu: partnerUp, zhong, mo, detail: "别责：阳日取干合上神为初传，中末取干上神" };
       } else {
-        // 阴：取支前三合为初传（按顺时针下一位）
+        // 阴：取支前三合为初传（按顺时针下一位），初传取该宫“下神”（地支）
         const triPrev = ((z: DiZhi) => {
           const t = [["申", "子", "辰"], ["亥", "卯", "未"], ["寅", "午", "戌"], ["巳", "酉", "丑"]] as DiZhi[][];
           const g = t.find((g) => g.includes(z))!;
           const i = g.indexOf(z);
           return g[(i + 1) % 3] as DiZhi;
         })(dayZhi);
-        const chu = plate.shangShen(triPrev);
+        const chu = triPrev;
         const ganUp = plate.shangShen(dayGan);
         const zhong = ganUp;
         const mo = ganUp;

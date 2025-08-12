@@ -32,6 +32,24 @@ console.log(pan.siKePairs);
 console.log(pan.siKeSanZhuan);
 ```
 
+#### 新增：十二天将按“昼夜起贵 + 下神定顺逆”铺入十二支
+
+```ts
+import { buildTianJiangMap, listTianJiang, buildTianJiangAbbrMap, listTianJiangAbbr } from "daliuren-lib";
+
+// 例如：午时（属昼）→ 起贵于丑，丑属亥~辰半圈 → 顺排
+const map = buildTianJiangMap({ shiZhi: "午" });
+// map["丑"] === "贵人"，map["寅"] === "螣蛇"，...，依次顺行
+
+// 例如：子时（属夜）→ 起贵于未，未属巳~戌半圈 → 逆排
+const pairs = listTianJiang({ shiZhi: "子" });
+// 返回子→亥顺序的 [地支, 天将] 列表，便于展示
+
+// 简称：贵蛇朱合勾龙空虎常玄阴后
+const abbrMap = buildTianJiangAbbrMap({ shiZhi: "午" });
+const abbrPairs = listTianJiangAbbr({ shiZhi: "子" });
+```
+
 ### API
 
 - `calcGanShang(gan: TianGan, ju: number): DiZhi`

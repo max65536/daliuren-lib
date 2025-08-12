@@ -4,3 +4,4 @@ export * from "./rules.js";
 export * from "./engine.js";
 export * from "./plate.js";
 export * from "./full.js";
+export * from "./tianjiang.js";

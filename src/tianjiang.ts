@@ -1,4 +1,4 @@
-import { DiZhi } from "./types.js";
+import { DiZhi, TianGan } from "./types.js";
 import { DIZHI_ORDER } from "./core.js";
 
 // 十二天将固定次序（仅用简称）。
@@ -16,9 +16,28 @@ export function isDaytime(shiZhi: DiZhi): boolean {
   return ("卯辰巳午未申" as string).includes(shiZhi);
 }
 
-/** 昼占起贵于丑；夜占起贵于未 */
-export function startPalaceByDayNight(shiZhi: DiZhi): DiZhi {
-  return isDaytime(shiZhi) ? "丑" : "未";
+/**
+ * 日干 + 昼夜 起贵所附之支（起宫）
+ * 你提供的规则表：
+ * | 日干   | 昼贵（卯-申时） | 夜贵（酉-寅时） |
+ * |--------|------------------|------------------|
+ * | 甲戊庚 | 丑               | 未               |
+ * | 乙己   | 子               | 申               |
+ * | 丙丁   | 亥               | 酉               |
+ * | 壬癸   | 巳               | 卯               |
+ * | 辛     | 午               | 寅               |
+ */
+export function startPalaceByGanAndDayNight(dayGan: TianGan, shiZhi: DiZhi): DiZhi {
+  const DAY_START_BY_GAN: Record<TianGan, DiZhi> = {
+    "甲": "丑", "乙": "子", "丙": "亥", "丁": "亥", "戊": "丑",
+    "己": "子", "庚": "丑", "辛": "午", "壬": "巳", "癸": "巳",
+  };
+  const NIGHT_START_BY_GAN: Record<TianGan, DiZhi> = {
+    "甲": "未", "乙": "申", "丙": "酉", "丁": "酉", "戊": "未",
+    "己": "申", "庚": "未", "辛": "寅", "壬": "卯", "癸": "卯",
+  };
+  const daytime = isDaytime(shiZhi);
+  return (daytime ? DAY_START_BY_GAN : NIGHT_START_BY_GAN)[dayGan];
 }
 
 /**
@@ -32,15 +51,16 @@ export function directionByLowerSpirit(palace: DiZhi): "forward" | "backward" {
 }
 
 export interface BuildTianJiangParams {
-  shiZhi: DiZhi; // 占时地支（用于昼夜)
+  dayGan: TianGan; // 日干（新增）
+  shiZhi: DiZhi;   // 占时地支（用于昼夜)
 }
 
 /**
- * 按“昼夜起贵 + 下神定顺逆”将十二天将铺入十二支。
+ * 按“日干+昼夜起贵 + 下神定顺逆”将十二天将铺入十二支。
  * 返回 Record<地支, 天将>
  */
-export function buildTianJiangMap({ shiZhi }: BuildTianJiangParams): Record<DiZhi, TianJiang> {
-  const startPalace = startPalaceByDayNight(shiZhi);
+export function buildTianJiangMap({ dayGan, shiZhi }: BuildTianJiangParams): Record<DiZhi, TianJiang> {
+  const startPalace = startPalaceByGanAndDayNight(dayGan, shiZhi);
   const dir = directionByLowerSpirit(startPalace);
   const step = dir === "forward" ? 1 : -1;
 
@@ -54,8 +74,8 @@ export function buildTianJiangMap({ shiZhi }: BuildTianJiangParams): Record<DiZh
 }
 
 /** 便捷：返回按子→亥顺序的 [地支, 天将] 列表，便于展示 */
-export function listTianJiang({ shiZhi }: BuildTianJiangParams): Array<[DiZhi, TianJiang]> {
-  const m = buildTianJiangMap({ shiZhi });
+export function listTianJiang(params: BuildTianJiangParams): Array<[DiZhi, TianJiang]> {
+  const m = buildTianJiangMap(params);
   return DIZHI_ORDER.map((z) => [z, m[z]] as [DiZhi, TianJiang]);
 }
 

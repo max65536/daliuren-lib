@@ -30,7 +30,7 @@ console.log("四课(一~四课):", result.siKePairs);
 console.log("课型与三传:", result.siKeSanZhuan);
 
 // ===== 美化输出：十二天将环形排布 =====
-const ring = (() => {
+const tianDiPanBlock = (() => {
   const pairs = listTianJiang({ dayGan, shiZhi });
   const m: Record<string, string> = Object.fromEntries(pairs);
   const top = ["巳", "午", "未", "申"].map((z) => m[z]).join(" ");
@@ -43,7 +43,7 @@ const ring = (() => {
   const rightBottom = "戌" + m["戌"];
   const lineWidth = ("  " + top).length;
   const padBetween = (l: string, r: string) => {
-    const spaces = Math.max(1, lineWidth - l.length - r.length);
+    const spaces = Math.max(1, lineWidth - l.length);
     return l + " ".repeat(spaces) + r;
   };
   return [
@@ -55,7 +55,7 @@ const ring = (() => {
     "  " + bottom,
   ];
 })();
-ring.forEach((l) => console.log(l));
+tianDiPanBlock.forEach((l) => console.log(l));
 
 console.log("");
 

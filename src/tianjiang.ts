@@ -78,6 +78,3 @@ export function listTianJiang(params: BuildTianJiangParams): Array<[DiZhi, TianJ
   const m = buildTianJiangMap(params);
   return DIZHI_ORDER.map((z) => [z, m[z]] as [DiZhi, TianJiang]);
 }
-
-// 兼容性别名：当前即为简称，保持 API 不变
-// 过去的 *Abbr* API 已合并到上述函数中：现在默认即返回简称。

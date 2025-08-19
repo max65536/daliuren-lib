@@ -5,6 +5,8 @@
 当前已实现：
 - 天干寄宫映射
 - 从寄宫起第一局，按地支逆序推移求第 n 局的「干上」
+ - 四课三传推导：反吟/伏吟/别责/八专/贼克/比用/涉害/遥克/昂星 等常见课型
+ - ju/*.txt 示例解析、批量对照与报告导出
 
 ### 安装与构建
 
@@ -143,6 +145,28 @@ const r = computePanByJu("丙申", 3);
 console.log(r.siKePairs);
 console.log(r.siKeSanZhuan);
 ```
+
+### 书例解析与对照（ju/*.txt）
+
+- 解析器：`scripts/parse_ju.mjs`
+  - 处理“左右两栏重复”的行；以“最长的 3+ 空格”作为左右栏分隔，仅取左栏文本。
+  - 自底向上扫描，定位“三传三行”（第二列含地支）。
+  - 四课取“三传首行”之上的两行：含天干者为“下行”，另一行为“上行”。
+  - 书是右→左展示四课（四三二一），解析后会反转为库内部的一二三四顺序。
+  - 忽略页面脚注等噪声；已修复如 0002-甲子.txt 的 2、12 局解析异常。
+
+- 单文件/单局对照：
+  - `npm run compare:one -- ju/0002-甲子.txt 1`
+  - 输出四课顺序（会自动尝试反转以对齐）与三传是否一致。
+
+- 批量对照与报告：
+  - `npm run compare:ju` 对当前目录（或传入文件/目录）进行检查；`npm run compare:all` 扫描 `ju/` 目录全部文件。
+  - 控制台输出汇总：总数/通过/不通过；并打印前若干条不通过详情。
+  - 报告输出：
+    - `reports/ju_compare_mismatch.csv`：仅包含不通过项，字段含 `file, dayGanzhi, ju, wantSan, gotSan, wantKe, gotKe, gotKeNorm, orderUsed, kind, note, ganShang, reason`。
+    - `reports/ju_compare_full.csv`：全量结果（含通过项），字段同上但无 `reason`。
+
+提示：书面四课顺序是“右→左”，而库内部为“左→右”的“一二三四”。对照脚本会尝试在比较前进行顺序归一化（必要时反转）。
 
 ### 天干寄宫
 

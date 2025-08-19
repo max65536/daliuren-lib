@@ -189,14 +189,40 @@ function deriveRegular(input: DeriveInput): DeriveResult {
   const duCands = dedup(duList);
   const ukCands = dedup(ukList);
   const prefCands = duCands.length > 0 ? duCands : ukCands;
-  // 比用：在优先生效的集合中，若既有“同阴阳”又有“异阴阳”，取同阴阳为初传
+  // 比用：在优先生效的集合中，若既有“同阴阳”又有“异阴阳”，优先同阴阳；
+  // 若同阴阳不止一个，则交由涉害（孟/仲/季）在同阴阳集合内裁决。
   const sameYY = prefCands.filter((c) => compareYinYang(dayGan, c));
   const diffYY = prefCands.filter((c) => !compareYinYang(dayGan, c));
   if (sameYY.length > 0 && diffYY.length > 0) {
-    const chu = sameYY[0];
+    if (sameYY.length === 1) {
+      const chu = sameYY[0];
+      const zhong = nextByShang(plate, chu);
+      const mo = nextByShang(plate, zhong);
+      return { kind: "比用课", chu, zhong, mo, detail: duCands.length>0 ? "多处贼克，先取下贼上，再比用取同阴阳" : "多处贼克，比用取同阴阳" };
+    }
+    // 多个“同阴阳”并列：在 sameYY 内按涉害（孟/仲/季）决断
+    const groupOf = (z: DiZhi): 0 | 1 | 2 | 3 => {
+      if (["寅", "申", "巳", "亥"].includes(z)) return 0; // 孟
+      if (["子", "午", "卯", "酉"].includes(z)) return 1; // 仲
+      if (["辰", "戌", "丑", "未"].includes(z)) return 2; // 季
+      return 3;
+    };
+    const tian = (plate as any).tianpan as Record<DiZhi, DiZhi> | undefined;
+    const palaceOfUp = (u: SymbolLike): DiZhi | undefined => {
+      if (!tian) return undefined;
+      const ent = Object.entries(tian).find(([, up]) => up === u);
+      return ent ? (ent[0] as DiZhi) : undefined;
+    };
+    const candWithGroup: Array<{ up: SymbolLike; grp: number }> = sameYY.map((u) => {
+      const palace = palaceOfUp(u);
+      const grp = palace ? groupOf(palace) : 99;
+      return { up: u, grp };
+    });
+    candWithGroup.sort((a, b) => a.grp - b.grp);
+    const chu = (candWithGroup[0]?.up) ?? sameYY[0];
     const zhong = nextByShang(plate, chu);
     const mo = nextByShang(plate, zhong);
-    return { kind: "比用课", chu, zhong, mo, detail: duCands.length>0 ? "多处贼克，先取下贼上，再比用取同阴阳" : "多处贼克，比用取同阴阳" };
+    return { kind: "比用课", chu, zhong, mo, detail: "比用并列，同阴阳交由涉害(孟仲季)裁决" };
   }
   // 涉害（孟仲季法）：按“候选上神所对应地盘(下神)”的 孟→仲→季 类别取其上神
   const groupOf = (z: DiZhi): 0 | 1 | 2 | 3 => {
@@ -245,7 +271,21 @@ export function deriveSiKeSanZhuan(input: DeriveInput): DeriveResult {
     if (shangKeXia + xiaZeShang > 0) {
       // 有克：初依克取；中取初刑，末取中刑（含自刑/中冲回退）
       const base = deriveRegular(input);
-      return { kind: "伏吟课", chu: base.chu, zhong: base.zhong, mo: base.mo, detail: "伏吟有克：依克取" };
+      const chu = base.chu as DiZhi; // 假定为地支
+      let zhong: SymbolLike = nextXing(chu) ?? plate.shangShen(chu);
+      // 初传自刑时，中取支上
+      if (zhong === chu) {
+        zhong = plate.shangShen(dayZhi);
+      }
+      let mo: SymbolLike = nextXing(zhong as DiZhi) ?? plate.shangShen(zhong);
+      // 中传又自刑，末取中冲
+      if (mo === (zhong as DiZhi)) {
+        // 中冲：取与中传相冲
+        const ORDER: DiZhi[] = ["子", "丑", "寅", "卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥"];
+        const idx = ORDER.indexOf(zhong as DiZhi);
+        mo = ORDER[(idx + 6) % 12];
+      }
+      return { kind: "伏吟课", chu: base.chu, zhong, mo, detail: "伏吟有克：初依克取，中取初刑，末取中刑" };
     }
     // 无克：不取遥克。阳：干上→初刑→中刑；阴：支上→初刑→中刑
     const yang = yinYangOfGan(dayGan) === "阳";

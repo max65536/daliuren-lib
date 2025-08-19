@@ -292,9 +292,11 @@ export function deriveSiKeSanZhuan(input: DeriveInput): DeriveResult {
     const yang = yinYangOfGan(dayGan) === "阳";
     const first = yang ? plate.shangShen(dayGan) : plate.shangShen(dayZhi);
     let zhong: SymbolLike = nextXing(first as DiZhi) ?? plate.shangShen(first);
-    // 如初传自刑，取支上神为中传
+    // 如初传自刑，中传改取“另一边”：
+    // - 若初传取自干上（阳日），则中传取支上；
+    // - 若初传取自支上（阴日），则中传取干上。
     if (zhong === first) {
-      zhong = plate.shangShen(dayZhi);
+      zhong = yang ? plate.shangShen(dayZhi) : plate.shangShen(dayGan);
     }
     let mo: SymbolLike = nextXing(zhong as DiZhi) ?? plate.shangShen(zhong);
     // 若中传又自刑，取中冲为末传

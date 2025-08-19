@@ -78,7 +78,7 @@ export function computeFullPan({ dayGanzhi, shiZhi, yueJiang }: BuildSiKeParams)
 
   // 不全课：四个上神中有重复则为不全
   const ups = [k1_up, k2_up, k3_up, k4_up];
-  const isIncomplete = new Set(ups).size < 4;
+  const isIncomplete = new Set(ups).size === 3;
 
   // 八专：干支同位 + 仅两课 + 上下无克
   const isGanZhiSame = GAN_JI_GONG[gan] === zhi;
@@ -158,7 +158,7 @@ export function computePanByJu(dayGanzhi: string, ju: number): FullPanResult {
 
   // 标志位（未知时不判反/伏吟）；不全/八专按相同判定
   const ups = [k1_up, k2_up, k3_up, k4_up];
-  const isIncomplete = new Set(ups).size < 4;
+  const isIncomplete = new Set(ups).size === 3;
   const pairKey = (p: KePair) => `${p.up}-${p.down}`;
   const uniquePairs = new Set(siKePairs.map(pairKey));
   const noKe = siKePairs.every((p) => {

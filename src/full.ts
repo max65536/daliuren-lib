@@ -173,6 +173,10 @@ export function computePanByJu(dayGanzhi: string, ju: number): FullPanResult {
     dayZhi: zhi,
     siKe: siKePairs,
     plate,
+    // 依据“局”补充常见特例：
+    // 约定：第1局视为伏吟，第7局视为反吟
+    isFuYin: ju === 1 ? true : undefined,
+    isFanYin: ju === 7 ? true : undefined,
     isIncomplete,
     isBaZhuan,
   });

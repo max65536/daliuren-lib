@@ -13,7 +13,9 @@
     "test": "jest --runInBand",
     "example": "node dist/examples/usage.js",
     "keti": "npm run build && node scripts/test_keti.mjs",
-    "parse:ju": "node scripts/parse_ju.mjs"
+    "parse:ju": "node scripts/parse_ju.mjs",
+    "compare:ju": "npm run build && node scripts/compare_ju.mjs",
+    "compare:one": "npm run build && node scripts/compare_one.mjs"
   },
   "devDependencies": {
     "@types/jest": "^30.0.0",

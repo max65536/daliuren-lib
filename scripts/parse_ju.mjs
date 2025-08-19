@@ -14,23 +14,23 @@ function leftHalf(line) {
   // 优先处理“左右两半重复”的行：形如 `X   X`
   const dup = line.match(/^(.*\S)\s+\1\s*$/);
   if (dup) return dup[1].trim();
-  // 否则用最长的 3+ 空格串作为左右栏分隔符，仅取左侧
+  // 用“最接近中点”的 3+ 空格串作为左右栏分隔符，避免误切到左栏内部间距
   const s = line;
-  let maxLen = 0, maxIndex = -1;
+  const gaps = [];
   for (let i = 0; i < s.length; ) {
     if (s[i] === ' ') {
       let j = i;
       while (j < s.length && s[j] === ' ') j++;
       const len = j - i;
-      if (len >= 3 && len > maxLen) {
-        maxLen = len;
-        maxIndex = i;
-      }
+      if (len >= 3) gaps.push({ start: i, len });
       i = j;
     } else i++;
   }
-  const left = maxIndex >= 0 ? s.slice(0, maxIndex) : s;
-  return left.trim();
+  if (gaps.length === 0) return s.trim();
+  const mid = s.length / 2;
+  gaps.sort((a, b) => Math.abs(a.start + a.len / 2 - mid) - Math.abs(b.start + b.len / 2 - mid));
+  const cut = gaps[0].start;
+  return s.slice(0, cut).trim();
 }
 
 function parseHeader(line) {
@@ -50,12 +50,12 @@ function parseBlock(lines) {
   // 从块底部提取三传与四课
   const nonEmpty = lines.map(leftHalf).map(normalizeLine).map(s=>s.trim()).filter(Boolean);
   if (nonEmpty.length < 8) throw new Error('块内容过短，无法解析');
-  // 自底向上筛选出“像三传”的行：第二列里应含地支
+  // 自底向上筛选出“三传三行”：首列为用神（财/官/父/兄/子），第二列含地支（或干支）
   const sanLines = [];
   for (let i = nonEmpty.length - 1; i >= 0 && sanLines.length < 3; i--) {
     const ln = nonEmpty[i];
     const tokens = ln.split(/\s+/).filter(Boolean);
-    if (tokens.length >= 2) {
+    if (tokens.length >= 2 && tokens[0].length === 1 && '财官父兄子'.includes(tokens[0])) {
       const gz = tokens[1];
       const zhi = Array.from(gz).find((ch) => ZHI.includes(ch));
       if (zhi) sanLines.push(ln);
@@ -69,17 +69,38 @@ function parseBlock(lines) {
     const zhi = Array.from(gz).find((ch) => ZHI.includes(ch));
     return zhi;
   });
-  // 找到三传第一行位置，取其前两行为“四课两行”
+  // 找到三传第一行位置，向上就近寻找“四课下行(含天干)”与“上行(4个地支)”
   const firstSanIdx = nonEmpty.indexOf(sanLines[0]);
-  const cand2 = nonEmpty.slice(firstSanIdx - 2, firstSanIdx);
-  if (cand2.length !== 2) throw new Error('四课行数量异常');
-  // 判断上下行：含天干者为“下行”（一课下应含日干）
-  const hasGan = (ln) => Array.from(ln).some(ch => GAN.includes(ch));
-  const [rowA, rowB] = cand2;
-  const rowDown = hasGan(rowA) ? rowA : rowB;
-  const rowUp = hasGan(rowA) ? rowB : rowA;
-  const ups = rowUp.split(/\s+/).filter(Boolean);
-  const downs = rowDown.split(/\s+/).filter(Boolean);
+  const tokens = (ln) => ln.split(/\s+/).filter(Boolean);
+  const isFour = (ln) => tokens(ln).length === 4;
+  const hasGan = (ln) => Array.from(ln).some((ch) => GAN.includes(ch));
+  const allZhi = (ln) => tokens(ln).every((t) => Array.from(t).every((ch) => ZHI.includes(ch)));
+
+  let rowDown = null;
+  let rowUp = null;
+  // 优先在首个三传行之上 5 行范围内寻找
+  for (let i = firstSanIdx - 1, seen = 0; i >= 0 && seen < 6; i--, seen++) {
+    const ln = nonEmpty[i];
+    if (!rowDown && isFour(ln) && hasGan(ln)) {
+      rowDown = ln;
+      // 继续向上找 rowUp
+      for (let j = i - 1, seen2 = 0; j >= 0 && seen2 < 6; j--, seen2++) {
+        const upLn = nonEmpty[j];
+        if (isFour(upLn) && allZhi(upLn)) { rowUp = upLn; break; }
+      }
+      break;
+    }
+  }
+  // 回退：若未命中，则退回到“上两行法”，并据含天干判断上下
+  if (!rowDown || !rowUp) {
+    const cand2 = nonEmpty.slice(firstSanIdx - 2, firstSanIdx);
+    if (cand2.length !== 2) throw new Error('四课行数量异常');
+    const [rowA, rowB] = cand2;
+    rowDown = hasGan(rowA) ? rowA : rowB;
+    rowUp = hasGan(rowA) ? rowB : rowA;
+  }
+  const ups = tokens(rowUp);
+  const downs = tokens(rowDown);
   if (ups.length !== 4 || downs.length !== 4) throw new Error('四课行需各4个字符: ' + rowUp + ' | ' + rowDown);
   // 书面展示从右往左：[四、三、二、一]，需反转为 [一、二、三、四]
   const pairsLR = [0,1,2,3].map((i) => ({ up: ups[i], down: downs[i] }));

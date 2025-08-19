@@ -15,7 +15,8 @@
     "keti": "npm run build && node scripts/test_keti.mjs",
     "parse:ju": "node scripts/parse_ju.mjs",
     "compare:ju": "npm run build && node scripts/compare_ju.mjs",
-    "compare:one": "npm run build && node scripts/compare_one.mjs"
+    "compare:one": "npm run build && node scripts/compare_one.mjs",
+    "compare:all": "npm run build && node scripts/compare_ju.mjs ju"
   },
   "devDependencies": {
     "@types/jest": "^30.0.0",

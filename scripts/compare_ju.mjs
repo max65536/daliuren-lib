@@ -122,6 +122,7 @@ async function main() {
 
   const { computePanByJu } = await import(path.resolve('dist/src/full.js'));
 
+  const results = [];
   const mismatches = [];
   let total = 0;
   let matched = 0;
@@ -166,8 +167,13 @@ async function main() {
         }
       }
 
-      if (sanOk && keOk) matched++;
-      else mismatches.push({ file, dayGanzhi: it.dayGanzhi, ju: it.ju, wantSan: wantSan.join(''), gotSan: gotSan.join(''), wantKe: wantKe.join(' '), gotKe: gotKe.join(' '), gotKeNorm: normGotKe.join(' '), orderUsed: usedOrder });
+      const pass = sanOk && keOk;
+      const kind = (comp.siKeSanZhuan && comp.siKeSanZhuan.kind) || '';
+      const note = (comp.siKeSanZhuan && comp.siKeSanZhuan.note) || '';
+      const ganShang = comp.ganShang || '';
+      if (pass) matched++;
+      else mismatches.push({ file, dayGanzhi: it.dayGanzhi, ju: it.ju, wantSan: wantSan.join(''), gotSan: gotSan.join(''), wantKe: wantKe.join(' '), gotKe: gotKe.join(' '), gotKeNorm: normGotKe.join(' '), orderUsed: usedOrder, kind, note, ganShang });
+      results.push({ file, dayGanzhi: it.dayGanzhi, ju: it.ju, pass, wantSan: wantSan.join(''), gotSan: gotSan.join(''), wantKe: wantKe.join(' '), gotKe: gotKe.join(' '), gotKeNorm: normGotKe.join(' '), orderUsed: usedOrder, kind, note, ganShang });
     }
   }
 
@@ -186,12 +192,19 @@ async function main() {
   // 写出 CSV 报告
   const reportDir = path.resolve('reports');
   if (!fs.existsSync(reportDir)) fs.mkdirSync(reportDir, { recursive: true });
-  const csvPath = path.join(reportDir, 'ju_compare.csv');
-  const header = 'file,dayGanzhi,ju,wantSan,gotSan,wantKe,gotKe,gotKeNorm,orderUsed,reason\n';
-  const rows = mismatches.map(m => [m.file, m.dayGanzhi, m.ju, m.wantSan || '', m.gotSan || '', m.wantKe || '', m.gotKe || '', m.gotKeNorm || '', m.orderUsed || '', m.reason || '']
+  const csvPath = path.join(reportDir, 'ju_compare_mismatch.csv');
+  const header = 'file,dayGanzhi,ju,wantSan,gotSan,wantKe,gotKe,gotKeNorm,orderUsed,kind,note,ganShang,reason\n';
+  const rows = mismatches.map(m => [m.file, m.dayGanzhi, m.ju, m.wantSan || '', m.gotSan || '', m.wantKe || '', m.gotKe || '', m.gotKeNorm || '', m.orderUsed || '', m.kind || '', m.note || '', m.ganShang || '', m.reason || '']
     .map(s => String(s).replaceAll('"', '""')).map(s => `"${s}"`).join(','));
   fs.writeFileSync(csvPath, header + rows.join('\n'), 'utf-8');
   console.log('Report written:', csvPath);
+
+  const csvFull = path.join(reportDir, 'ju_compare_full.csv');
+  const headerFull = 'file,dayGanzhi,ju,pass,wantSan,gotSan,wantKe,gotKe,gotKeNorm,orderUsed,kind,note,ganShang\n';
+  const rowsFull = results.map(r => [r.file, r.dayGanzhi, r.ju, r.pass ? '1' : '0', r.wantSan || '', r.gotSan || '', r.wantKe || '', r.gotKe || '', r.gotKeNorm || '', r.orderUsed || '', r.kind || '', r.note || '', r.ganShang || '']
+    .map(s => String(s).replaceAll('"', '""')).map(s => `"${s}"`).join(','));
+  fs.writeFileSync(csvFull, headerFull + rowsFull.join('\n'), 'utf-8');
+  console.log('Report written:', csvFull);
 }
 
 main().catch((e) => {

@@ -152,3 +152,36 @@ console.log(r.siKeSanZhuan);
 ### 流程图
 
 基于 reference.md 的判课/取传流程图见 `flowchart.md`（Mermaid）。
+
+### 新增：美化输出 API（展示用）
+
+- `buildTianDiPanBlock({ dayGan, shiZhi }): string[]`
+  - 返回 6 行字符串，按“昼夜起贵 + 下神定顺逆”将十二天将环形铺入十二支的展示块。
+
+- `buildSiKeBlock(siKePairs, { dayGan, shiZhi, jiangMap? }): string[]`
+  - 返回三行字符串：上将简称行、四课上神行、四课下神行；显示顺序为书面“右→左”（四、三、二、一）。
+  - 可传入已构建的 `jiangMap` 以避免重复计算。
+
+- `buildSanZhuanBlock(sanZhuan, { dayGan, shiZhi, jiangMap? }): string[]`
+  - 返回三行字符串：预留六亲、干(若为干)/支、地支、上将简称。若为地支则第二列留空。
+  - 可传入已构建的 `jiangMap` 以避免重复计算。
+
+示例：
+
+```ts
+import { computeFullPan, buildTianJiangMap, buildTianDiPanBlock, buildSiKeBlock, buildSanZhuanBlock } from 'daliuren-lib';
+
+const dayGanzhi = '丙申';
+const shiZhi = '申';
+const yueJiang = '未';
+const dayGan = dayGanzhi[0] as any;
+
+const pan = computeFullPan({ dayGanzhi, shiZhi, yueJiang });
+const jiangMap = buildTianJiangMap({ dayGan, shiZhi }); // 构建一次，复用
+
+buildTianDiPanBlock({ dayGan, shiZhi }).forEach(l => console.log(l));
+console.log('');
+buildSiKeBlock(pan.siKePairs, { dayGan, shiZhi, jiangMap }).forEach(l => console.log(l));
+console.log('');
+buildSanZhuanBlock(pan.siKeSanZhuan.sanZhuan, { dayGan, shiZhi, jiangMap }).forEach(l => console.log(l));
+```

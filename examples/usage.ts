@@ -1,7 +1,6 @@
 import {
   computeFullPan,
   calcGanShang,
-  listTianJiang,
   buildTianJiangMap,
   DIZHI_ORDER,
   GAN_JI_GONG,
@@ -29,10 +28,12 @@ const result = computeFullPan({ dayGanzhi, shiZhi, yueJiang });
 console.log("四课(一~四课):", result.siKePairs);
 console.log("课型与三传:", result.siKeSanZhuan);
 
+// 仅构建一次天将映射，后续复用
+const jiangMap = buildTianJiangMap({ dayGan, shiZhi });
+
 // ===== 美化输出：十二天将环形排布 =====
 const tianDiPanBlock = (() => {
-  const pairs = listTianJiang({ dayGan, shiZhi });
-  const m: Record<string, string> = Object.fromEntries(pairs);
+  const m: Record<string, string> = jiangMap as any;
   const top = ["巳", "午", "未", "申"].map((z) => m[z]).join(" ");
   const topZ = ["巳", "午", "未", "申"].join(" ");
   const bottomZ = ["寅", "丑", "子", "亥"].join(" ");
@@ -61,7 +62,7 @@ console.log("");
 
 // ===== 美化输出：四课（上将 / 上神 / 下神）=====
 const siKeBlock = (() => {
-  const abbrMap = buildTianJiangMap({ dayGan, shiZhi });
+  const abbrMap = jiangMap as any;
   const ups = result.siKePairs.map((p) => p.up as any as DiZhi);
   const downs = result.siKePairs.map((p) => String(p.down));
   const order = [3, 2, 1, 0]; // 显示顺序：四、三、二、一（右端为一课）
@@ -77,7 +78,7 @@ console.log("");
 
 // ===== 美化输出：三传（干/支/将） =====
 const sanZhuanBlock = (() => {
-  const abbrMap = buildTianJiangMap({ dayGan, shiZhi });
+  const abbrMap = jiangMap as any;
   const rows = result.siKeSanZhuan.sanZhuan.map((sym) => {
     const isZhi = (DIZHI_ORDER as string[]).includes(sym);
     const gan = isZhi ? "" : sym; // 若为干，则显示于第2列

@@ -10,6 +10,7 @@ import {
   yiMaOf,
   xingOf,
   nextXing,
+  oppositeZhi,
 } from "./rules.js";
 
 export type SymbolLike = DiZhi | TianGan; // 本引擎中“神”可以为地支或天干
@@ -291,7 +292,6 @@ export function deriveSiKeSanZhuan(input: DeriveInput): DeriveResult {
     const yang = yinYangOfGan(dayGan) === "阳";
     const first = yang ? plate.shangShen(dayGan) : plate.shangShen(dayZhi);
     let zhong: SymbolLike = nextXing(first as DiZhi) ?? plate.shangShen(first);
-    console.log("first, zhong", first, zhong);
     // 如初传自刑，取支上神为中传
     if (zhong === first) {
       zhong = plate.shangShen(dayZhi);
@@ -302,6 +302,10 @@ export function deriveSiKeSanZhuan(input: DeriveInput): DeriveResult {
       const ORDER: DiZhi[] = ["子", "丑", "寅", "卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥"];
       const idx = ORDER.indexOf(zhong as DiZhi);
       mo = ORDER[(idx + 6) % 12];
+    }
+    // 若末传与初传重复，取中冲以避免重复
+    if (mo === (first as DiZhi)) {
+      mo = oppositeZhi(zhong as DiZhi);
     }
     return { kind: "伏吟课", chu: first, zhong, mo, detail: "伏吟无克：不取遥克，阳干上/阴支上为初传" };
   }

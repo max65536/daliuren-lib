@@ -1,7 +1,7 @@
 {
   "name": "daliuren-lib",
   "version": "0.2.0",
-  "private": true,
+  "private": false,
   "type": "module",
   "main": "dist/index.js",
   "module": "dist/index.js",
@@ -9,10 +9,19 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "clean": "rm -rf dist",
-    "prepare": "npm run build",
+    "prepublishOnly": "npm run clean && npm run build",
     "test": "jest --runInBand",
-    "example": "node dist/examples/usage.js"
+    "example": "node dist/examples/usage.js",
+    "keti": "npm run build && node scripts/test_keti.mjs",
+    "parse:ju": "node scripts/parse_ju.mjs",
+    "compare:ju": "npm run build && node scripts/compare_ju.mjs",
+    "compare:one": "npm run build && node scripts/compare_one.mjs",
+    "compare:all": "npm run build && node scripts/compare_ju.mjs ju"
   },
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "devDependencies": {
     "@types/jest": "^30.0.0",
     "jest": "^30.0.5",

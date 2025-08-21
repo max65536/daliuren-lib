@@ -174,7 +174,9 @@ function parseHeaderFromLine(line) {
 function findTriadInLine(ln) {
   // Look for patterns like: "财 壬辰 勾" or "鬼 乙酉 后" or "兄 辛卯 青"
   // Flexible: 将名可无，用神+干支必须有
-  const re = /([财官父兄子鬼印])\s+([甲乙丙丁戊己庚辛壬癸]?[子丑寅卯辰巳午未申酉戌亥])(?:\s+[朱蛇勾青空贵后阴玄虎常六])?\s*$/;
+  // Some sources abbreviate generals as single chars; occasionally use 龙 for 青龙
+  // Also allow label “比” seen in certain课类（如知一/涉害等）
+  const re = /([财官父兄子鬼印比])\s+([甲乙丙丁戊己庚辛壬癸]?[子丑寅卯辰巳午未申酉戌亥])(?:\s+[朱蛇勾青空贵后阴玄虎常六龙])?\s*$/;
   const m = ln.match(re);
   if (!m) return null;
   const label = m[1];

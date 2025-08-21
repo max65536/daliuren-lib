@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { TextDecoder } from 'util';
 
 const GAN = '甲乙丙丁戊己庚辛壬癸';
 const ZHI = '子丑寅卯辰巳午未申酉戌亥';
@@ -7,18 +8,53 @@ const ZH_NUM = { '一':1,'二':2,'三':3,'四':4,'五':5,'六':6,'七':7,'八':8
 
 function decodeText(filePath) {
   const buf = fs.readFileSync(filePath);
-  if (buf.length >= 2 && buf[0] === 0xff && buf[1] === 0xfe) {
-    return buf.toString('utf16le');
+  return decodeBuffer(buf);
+}
+
+function decodeBuffer(buf) {
+  if (!buf || buf.length === 0) return '';
+  // BOM-based detection first
+  if (buf.length >= 3 && buf[0] === 0xEF && buf[1] === 0xBB && buf[2] === 0xBF) {
+    return new TextDecoder('utf-8').decode(buf.subarray(3));
   }
-  // Heuristic: if buffer has many 0x00 bytes, treat as UTF-16LE
-  const zeros = [...buf.slice(0, Math.min(buf.length, 1024))].filter((b) => b === 0x00).length;
-  if (zeros > 64) return buf.toString('utf16le');
-  return buf.toString('utf8');
+  if (buf.length >= 2 && buf[0] === 0xFF && buf[1] === 0xFE) {
+    return new TextDecoder('utf-16le').decode(buf.subarray(2));
+  }
+  if (buf.length >= 2 && buf[0] === 0xFE && buf[1] === 0xFF) {
+    return new TextDecoder('utf-16be').decode(buf.subarray(2));
+  }
+  // Heuristic: lots of 0x00 bytes => UTF-16; decide endianness by position
+  const sampleLen = Math.min(buf.length, 2048);
+  let zeros = 0, zeroEven = 0, zeroOdd = 0;
+  for (let i = 0; i < sampleLen; i++) {
+    if (buf[i] === 0x00) {
+      zeros++;
+      if ((i & 1) === 0) zeroEven++; else zeroOdd++;
+    }
+  }
+  if (zeros > 64) {
+    const enc = zeroEven > zeroOdd ? 'utf-16be' : 'utf-16le';
+    return new TextDecoder(enc).decode(buf);
+  }
+  // Try strict UTF-8 first
+  try {
+    return new TextDecoder('utf-8', { fatal: true }).decode(buf);
+  } catch (_) {
+    // Fallback to GB18030 (superset of GBK) if available
+    try {
+      return new TextDecoder('gb18030').decode(buf);
+    } catch (e2) {
+      // Last resort: permissive UTF-8
+      return new TextDecoder('utf-8').decode(buf);
+    }
+  }
 }
 
 function normalizeLine(line) {
   return line
+    .replace(/\uFEFF/g, '')
     .replace(/\u00A0/g, ' ')
+    .replace(/\u3000/g, ' ')
     .replace(/\t/g, ' ')
     .replace(/\s+$/g, '')
     .replace(/\r/g, '');

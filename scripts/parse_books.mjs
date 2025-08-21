@@ -4,7 +4,7 @@ import { TextDecoder } from 'util';
 
 const GAN = '甲乙丙丁戊己庚辛壬癸';
 const ZHI = '子丑寅卯辰巳午未申酉戌亥';
-const ZH_NUM = { '一':1,'二':2,'三':3,'四':4,'五':5,'六':6,'七':7,'八':8,'九':9,'十':10,'十一':11,'十二':12 };
+const ZH_NUM = { '正':1,'一':1,'二':2,'三':3,'四':4,'五':5,'六':6,'七':7,'八':8,'九':9,'十':10,'十一':11,'十二':12 };
 
 function decodeText(filePath) {
   const buf = fs.readFileSync(filePath);
@@ -108,14 +108,31 @@ function zhMonthToNum(txt) {
   return null;
 }
 
+// Title line: like "八、昴  星  课" or "十二、八  专  课"
+// Only up to 十二
+function parseTitleFromLine(line) {
+  const m = line.match(/^\s*(十[一二]?|[正一二三四五六七八九十])\s*[、．\.]\s*(.*\S)\s*$/);
+  if (!m) return null;
+  const numTxt = m[1];
+  const num = zhMonthToNum(numTxt);
+  if (!num || num < 1 || num > 12) return null;
+  const title = m[2];
+  return { num, numTxt, title, raw: line.trim() };
+}
+
 function parseHeaderFromLine(line) {
   // Examples we handle:
   // A) "辛巳九月寒露辰将"
   // B) "庚寅年七月处暑巳将"
   // C) "己丑年月寅将"（无具体月序）
+  // D) 无“将”而含年/月/日/时，如：
+  //    "庚寅年五月甲寅日丁卯时，因天气亢旱，闻鸠鸣，占一课……"
   // D) 「……，乙未日己卯时，甲午旬」同行或后续行补齐日时旬
-  const reA = /([甲乙丙丁戊己庚辛壬癸][子丑寅卯辰巳午未申酉戌亥])(?:年)?([一二三四五六七八九十]{1,2})月(?:[^，,。]*?)?([子丑寅卯辰巳午未申酉戌亥])将/;
+  // 支持“正月”作为一月
+  const reA = /([甲乙丙丁戊己庚辛壬癸][子丑寅卯辰巳午未申酉戌亥])(?:年)?([正一二三四五六七八九十]{1,2})月(?:[^，,。]*?)?([子丑寅卯辰巳午未申酉戌亥])将/;
   const reB = /([甲乙丙丁戊己庚辛壬癸][子丑寅卯辰巳午未申酉戌亥])(?:年)?月(?:[^，,。]*?)?([子丑寅卯辰巳午未申酉戌亥])将/;
+  // 年+具体月，但不带“将”字
+  const reC = /([甲乙丙丁戊己庚辛壬癸][子丑寅卯辰巳午未申酉戌亥])(?:年)?([一二三四五六七八九十]{1,2})月/;
   let m = line.match(reA);
   let yearGanzhi = null, monthZh = null, monthNum = null, yueJiang = null;
   if (m) {
@@ -125,9 +142,17 @@ function parseHeaderFromLine(line) {
     yueJiang = m[3];
   } else {
     const m2 = line.match(reB);
-    if (!m2) return null;
-    yearGanzhi = m2[1];
-    yueJiang = m2[2];
+    if (m2) {
+      yearGanzhi = m2[1];
+      yueJiang = m2[2];
+    } else {
+      const m3 = line.match(reC);
+      if (!m3) return null;
+      yearGanzhi = m3[1];
+      monthZh = m3[2];
+      monthNum = zhMonthToNum(monthZh);
+      // 无“将”，yueJiang 置空
+    }
   }
   // Try to parse 日干支与时辰（可选，可能无“日”字）
   let dayGanzhi = null;
@@ -241,18 +266,34 @@ function findCharts(rawLines) {
     }
     if (triIdx.length !== 3) continue;
     triIdx.sort((a, b) => a - b);
-    const nearby = rawLines.map((l) => normalizeLine(l)).slice(i, Math.min(endIdx + 1, i + 24));
-    // End marker extraction
+    // End marker extraction, possibly multi-line until next header or title
     let endLine = lines[endIdx] || '';
     let endMarker = null;
     let endText = null;
+    let endExtraLines = [];
     if (endLine) {
       const mEnd = endLine.match(/^\s*(断曰|断[：:])\s*(.*)$/);
       if (mEnd) {
         endMarker = mEnd[1];
-        endText = mEnd[2] || '';
+        endText = (mEnd[2] || '').trim();
+        // collect subsequent lines until the next header or title
+        for (let k = endIdx + 1; k < lines.length; k++) {
+          const ln = lines[k];
+          if (!ln) { endExtraLines.push(ln); continue; }
+          const nextHdr = parseHeaderFromLine(ln);
+          const nextTitle = parseTitleFromLine(ln);
+          if (nextHdr || nextTitle) break;
+          endExtraLines.push(ln);
+        }
       }
     }
+    // Compute preview range: from header to end section (including extended lines)
+    const previewStopIdx = (() => {
+      // If we already know the end extension length, use it; else fall back to endIdx
+      // Note: endExtraLines is defined below; handle temporal ordering by a local function.
+      return endIdx; // placeholder; will be recomputed after end extraction
+    })();
+
     const parsed = parseAround(
       // For 四课定位我们需要可见的空格，故不走 leftHalf
       lines,
@@ -260,13 +301,16 @@ function findCharts(rawLines) {
       triIdx
     );
     const triads = triIdx.map((idx) => findTriadInLine(lines[idx]));
+    // Now that endExtraLines is known, finalize nearby
+    const finalPreviewStop = (endMarker ? endIdx + endExtraLines.length : endIdx);
+    const nearby = lines.slice(i, Math.min(lines.length, finalPreviewStop + 1));
     results.push({
       header: hdrObj.raw,
       meta: hdrObj,
       triads,
       ...(parsed || {}),
       previewLines: nearby,
-      end: endMarker ? { marker: endMarker, text: endText, line: endLine, index: endIdx } : null,
+      end: endMarker ? { marker: endMarker, text: [endText, ...endExtraLines.filter(v => v != null && v !== '')].join('\n'), line: endLine, index: endIdx } : null,
       start: i,
     });
     // move i beyond this chart to avoid re-detecting inside
@@ -278,8 +322,16 @@ function findCharts(rawLines) {
 function main() {
   const dir = process.argv[2] || path.resolve('books');
   const limit = process.argv[3] ? parseInt(process.argv[3], 10) : 3; // preview count per file
-  const outPath = process.argv[4] || path.resolve('reports/books_parsed.json');
+  const outArg = process.argv[4] || '';
   const entries = fs.existsSync(dir) ? fs.readdirSync(dir) : [];
+
+  // Determine write mode:
+  // - default (no arg): per-file under reports/<basename>.json
+  // - if arg endswith .json: write single aggregated file to that path
+  // - else: treat arg as directory and write per-file JSONs inside it
+  const isSingleFile = outArg && path.extname(outArg).toLowerCase() === '.json';
+  const outDir = isSingleFile ? path.dirname(outArg) : (outArg ? outArg : path.resolve('reports'));
+
   const out = [];
   const full = [];
   for (const name of entries) {
@@ -304,14 +356,30 @@ function main() {
       })),
     };
     out.push(summary);
-    full.push({ file: name, totalFound: charts.length, charts });
+    const fullForFile = { file: name, totalFound: charts.length, charts };
+    full.push(fullForFile);
+
+    // Per-file output (default or directory mode)
+    if (!isSingleFile) {
+      try {
+        fs.mkdirSync(outDir, { recursive: true });
+        const base = path.parse(name).name + '.json';
+        const outPathFile = path.join(outDir, base);
+        fs.writeFileSync(outPathFile, JSON.stringify(fullForFile, null, 2), 'utf-8');
+      } catch (e) {
+        // ignore file write errors in CLI preview mode
+      }
+    }
   }
   console.log(JSON.stringify(out, null, 2));
-  try {
-    fs.mkdirSync(path.dirname(outPath), { recursive: true });
-    fs.writeFileSync(outPath, JSON.stringify(full, null, 2), 'utf-8');
-  } catch (e) {
-    // ignore file write errors in CLI preview mode
+  // Aggregated output only if explicitly requested
+  if (isSingleFile) {
+    try {
+      fs.mkdirSync(path.dirname(outArg), { recursive: true });
+      fs.writeFileSync(outArg, JSON.stringify(full, null, 2), 'utf-8');
+    } catch (e) {
+      // ignore file write errors in CLI preview mode
+    }
   }
 }
 

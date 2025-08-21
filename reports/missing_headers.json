@@ -1,36 +1,12 @@
 {
   "totalCandidates": 59,
-  "totalMissing": 8,
+  "totalMissing": 4,
   "files": [
     {
       "file": "六壬存验-清-吴师青.txt",
       "totalCandidates": 59,
-      "missingCount": 8,
+      "missingCount": 4,
       "missing": [
-        {
-          "index": 622,
-          "header": "戊寅三月清明戌将，丙寅日辛卯时，甲子旬，索占，知一、涉害、周遍。",
-          "analysis": {
-            "endIndex": 628,
-            "triadsFound": 2,
-            "triads": [
-              {
-                "index": 624,
-                "label": "子",
-                "gz": "甲子"
-              },
-              {
-                "index": 625,
-                "label": "父",
-                "gz": "辛未"
-              }
-            ],
-            "flags": {
-              "hasWhiteTail": false,
-              "hasReversedGZ": false
-            }
-          }
-        },
         {
           "index": 630,
           "header": "庚寅十月立冬卯将，癸卯庚申时，甲午旬，占失马向何方找寻、何日可得，知一、削轮。",
@@ -56,67 +32,19 @@
           }
         },
         {
-          "index": 698,
-          "header": "丙子二月春分戌将，乙酉日辛巳时，甲申旬，因犯罪已定重辟，索占吉凶，涉害、天狱。",
-          "analysis": {
-            "endIndex": 704,
-            "triadsFound": 2,
-            "triads": [
-              {
-                "index": 700,
-                "label": "财",
-                "gz": "乙未"
-              },
-              {
-                "index": 701,
-                "label": "子",
-                "gz": "癸巳"
-              }
-            ],
-            "flags": {
-              "hasWhiteTail": false,
-              "hasReversedGZ": false
-            }
-          }
-        },
-        {
-          "index": 729,
-          "header": "戊寅三月清明戌将，己巳日乙丑时天气亢旱，莱阳台中迟父师因思宗祈雨，占何日有雨，遥克、玄胎。 虎常",
-          "analysis": {
-            "endIndex": 733,
-            "triadsFound": 2,
-            "triads": [
-              {
-                "index": 730,
-                "label": "官",
-                "gz": "丙寅"
-              },
-              {
-                "index": 731,
-                "label": "子",
-                "gz": "壬申"
-              }
-            ],
-            "flags": {
-              "hasWhiteTail": false,
-              "hasReversedGZ": false
-            }
-          }
-        },
-        {
-          "index": 736,
+          "index": 739,
           "header": "己丑五月芒种申将，癸酉日辛酉时，甲子旬，占续弦婚姻成否，遥克、蒿矢、退茹。",
           "analysis": {
-            "endIndex": 743,
+            "endIndex": 746,
             "triadsFound": 2,
             "triads": [
               {
-                "index": 738,
+                "index": 741,
                 "label": "鬼",
                 "gz": "辛未"
               },
               {
-                "index": 739,
+                "index": 742,
                 "label": "财",
                 "gz": "庚午"
               }
@@ -128,34 +56,10 @@
           }
         },
         {
-          "index": 774,
-          "header": "丁卯年正月立春子将，丁巳日癸卯时，甲寅旬，占升迁，蒿矢、玄胎。",
-          "analysis": {
-            "endIndex": 779,
-            "triadsFound": 2,
-            "triads": [
-              {
-                "index": 776,
-                "label": "鬼",
-                "gz": "癸亥"
-              },
-              {
-                "index": 777,
-                "label": "兄",
-                "gz": "丁巳"
-              }
-            ],
-            "flags": {
-              "hasWhiteTail": false,
-              "hasReversedGZ": false
-            }
-          }
-        },
-        {
-          "index": 811,
+          "index": 815,
           "header": "庚寅年十月立冬卯将，辛巳朔甲午时，甲戌旬，因日食占之何应，弹射、病胎、励德。",
           "analysis": {
-            "endIndex": 817,
+            "endIndex": 821,
             "triadsFound": 0,
             "triads": [],
             "flags": {
@@ -165,10 +69,10 @@
           }
         },
         {
-          "index": 938,
+          "index": 942,
           "header": "庚寅年五月芒种申将，庚申日丁丑时，甲寅旬，占同妻子远行吉凶若何，八专、绝嗣。",
           "analysis": {
-            "endIndex": 945,
+            "endIndex": 949,
             "triadsFound": 0,
             "triads": [],
             "flags": {
